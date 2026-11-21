@@ -1,10 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Api.Data;
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddOpenApi();
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+}
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddOpenApi();
+    options.UseSqlServer(connectionString));
 
 var app = builder.Build();
 
