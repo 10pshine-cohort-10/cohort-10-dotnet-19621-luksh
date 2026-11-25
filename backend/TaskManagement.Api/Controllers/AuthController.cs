@@ -21,13 +21,12 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterRequest request)
     {
-        var result = await _authService.RegisterAsync(request);
-        if (result is null)
-        {
-            return Conflict(new { message = "Email is already registered." });
-        }
+        await _authService.RegisterAsync(request);
 
-        return Ok(result);
+        return Accepted(new
+        {
+            message = "If the email is not already registered, the account has been created. Please log in."
+        });
     }
 
     [HttpPost("login")]

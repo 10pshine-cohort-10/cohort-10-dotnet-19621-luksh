@@ -26,13 +26,13 @@ public class AuthService : IAuthService
         _jwtSettings = jwtSettings;
     }
 
-    public async Task<AuthResponse?> RegisterAsync(RegisterRequest request)
+    public async Task<bool> RegisterAsync(RegisterRequest request)
     {
         var email = request.Email.Trim().ToLowerInvariant();
 
         if (await _context.Users.AnyAsync(u => u.Email == email))
         {
-            return null;
+            return false;
         }
 
         var user = new User
@@ -44,17 +44,17 @@ public class AuthService : IAuthService
         user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
 
         _context.Users.Add(user);
-        
+
         try
         {
             await _context.SaveChangesAsync();
         }
         catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
         {
-            return null;
+            return false;
         }
 
-        return CreateAuthResponse(user);
+        return true;
     }
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request)
