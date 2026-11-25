@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
@@ -43,7 +44,15 @@ public class AuthService : IAuthService
         user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
 
         _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+        
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            return null;
+        }
 
         return CreateAuthResponse(user);
     }
@@ -65,6 +74,11 @@ public class AuthService : IAuthService
         }
 
         return CreateAuthResponse(user);
+    }
+    
+    private static bool IsUniqueConstraintViolation(DbUpdateException ex)
+    {
+        return ex.InnerException is SqlException { Number: 2601 or 2627 };
     }
 
     private AuthResponse CreateAuthResponse(User user)
