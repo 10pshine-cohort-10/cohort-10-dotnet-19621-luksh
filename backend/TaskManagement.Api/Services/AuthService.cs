@@ -18,6 +18,8 @@ public class AuthService : IAuthService
     private readonly AppDbContext _context;
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly JwtSettings _jwtSettings;
+    private static readonly Lazy<string> DummyPasswordHash = new(() =>
+        new PasswordHasher<User>().HashPassword(new User(), Guid.NewGuid().ToString("N")));
 
     public AuthService(AppDbContext context, IPasswordHasher<User> passwordHasher, JwtSettings jwtSettings)
     {
@@ -26,12 +28,14 @@ public class AuthService : IAuthService
         _jwtSettings = jwtSettings;
     }
 
-    public async Task<bool> RegisterAsync(RegisterRequest request)
+        public async Task<bool> RegisterAsync(RegisterRequest request)
     {
         var email = request.Email.Trim().ToLowerInvariant();
 
         if (await _context.Users.AnyAsync(u => u.Email == email))
         {
+           
+            _passwordHasher.HashPassword(new User(), request.Password);
             return false;
         }
 
@@ -64,6 +68,8 @@ public class AuthService : IAuthService
 
         if (user is null)
         {
+           
+            _passwordHasher.VerifyHashedPassword(new User(), DummyPasswordHash.Value, request.Password);
             return null;
         }
 
